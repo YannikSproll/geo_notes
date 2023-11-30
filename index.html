@@ -22,29 +22,21 @@
   </header>
   <div class="flex-grow flex-shrink flex flex-row items-stretch overflow-hidden">
     <aside id="sideBarContainer" class="bg-white flex-grow-0 flex-shrink-0 rounded p-3 shadow-xl overflow-hidden">
-      <ul class="text-sm">
+      <ul class="text-sm list-none space-y-2">
+        <li>
+          <a id="homeNavAnchor" onclick="navToHome()" class="flex items-center space-x-3 text-gray-700 p-2 rounded-md font-medium hover:bg-gray-200 cursor-pointer focus:bg-gray-200 focus:shadow-outline">
+            <span class="text-gray-600 text-lg content-center">
+              <i class="bi bi-geo-alt-fill"></i>
+            </span>
+            <span>Home</span>
+          </a>
+        </li>
         <li>
           <a id="notesNavAnchor" onclick="navToNotes()" class="flex items-center space-x-3 text-gray-700 p-2 rounded-md font-medium hover:bg-gray-200 cursor-pointer bg-gray-200 focus:bg-gray-200 focus:shadow-outline">
             <span class="text-gray-600 text-lg content-center">
               <i class="bi bi-card-text"></i>
             </span>
             <span>Notes</span>
-          </a>
-        </li>
-        <li>
-          <a id="remindersNavAnchor" onclick="navToReminders()" class="flex items-center mt-2 space-x-3 text-gray-700 p-2 rounded-md font-medium hover:bg-gray-200 cursor-pointer focus:bg-gray-200 focus:shadow-outline">
-            <span class="text-gray-600 text-lg content-center">
-              <i class="bi bi-bell"></i>
-            </span>
-            <span>Reminders</span>
-          </a>
-        </li>
-        <li>
-          <a id="settingsNavAnchor" onclick="navToSettings()" class="flex items-center mt-2 space-x-3 text-gray-700 p-2 rounded-md font-medium hover:bg-gray-200 cursor-pointer focus:bg-gray-200 focusshadow-outline">
-            <span class="text-gray-600 text-lg content-center">
-              <i class="bi bi-gear"></i>
-            </span>
-            <span>Settings</span>
           </a>
         </li>
       </ul>

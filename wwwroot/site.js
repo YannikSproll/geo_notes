@@ -19,7 +19,9 @@ function navToNotes() {
 }
 
 function navToHome() {
-  $("#mainContainer").load("home.html");
+  $("#mainContainer").load("home.html", function() {
+    setupGeolocation();
+  });
 
   $("#notesNavAnchor").removeClass("bg-gray-200");
   $("#homeNavAnchor").addClass("bg-gray-200");
@@ -236,4 +238,80 @@ function createDeleteButton() {
   return wrapperDiv
     .append(buttonElement
       .append(iconElement));
+}
+
+
+function setupGeolocation() {
+  if (navigator.geolocation) {
+    requestGeolocationPermission();
+  } else {
+    $("#homeWrapper").append(createNoGeolocationElement());
+  }
+}
+
+function requestGeolocationPermission() {
+  navigator.geolocation.getCurrentPosition(function(location) { 
+    clearHomeWrapper();
+    showPositionOnHomePage(location.coords);
+  });
+  navigator.permissions.query({ name: "geolocation" }).then((result) => {
+    if (result.state === "granted") {
+      // report(result.state);
+      // geoBtn.style.display = "none";
+    } else {
+      clearHomeWrapper();
+      $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
+      // report(result.state);
+      // geoBtn.style.display = "inline";
+    }
+    result.addEventListener("change", () => {
+      report(result.state);
+    });
+  });
+}
+
+function clearHomeWrapper() {
+  $("#homeWrapper").empty();
+}
+
+function createNoGeolocationElement() {
+  return $("<span></span>", {
+    "class" : "text-xl",
+    "text" : "This device does not support geolocation."
+  });
+}
+
+function createGeolocationPermissionDeniedElement() {
+  return $("<span></span>", {
+    "class" : "text-xl",
+    "text" : "The permission for geolocation is missing."
+  });
+}
+
+function createShowCurrentLocationElement(latitude, longitude) {
+  const textParagraphElement = $("<p></p>", {
+    "class" : "text-2xl",
+    "text" : "Current location:"
+  });
+
+  const coordinatesParagraphElement = $("<p></p>", {
+    "class" : "text-xl",
+    "text" : "Latitude: " + latitude + " | Longitude: " + longitude
+  });
+
+  const wrapperDiv =  $("<div></div>", {
+    "class" : "flex flex-col items-center"
+  });
+
+  return wrapperDiv
+    .append(textParagraphElement)
+    .append(coordinatesParagraphElement);
+}
+
+function showPositionOnHomePage(coordinates) {
+  $("#homeWrapper").append(createShowCurrentLocationElement(coordinates.latitude, coordinates.longitude));
+}
+
+function showPosition(position) {
+ console.log(position);
 }

@@ -2,7 +2,7 @@ const { DateTime } = luxon;
 
 
 window.onload = function () {
-  navToNotes();
+  navToHome();
 }
 
 function toogleSideBar() {
@@ -15,24 +15,14 @@ function navToNotes() {
   });
 
   $("#notesNavAnchor").addClass("bg-gray-200");
-  $("#remindersNavAnchor").removeClass("bg-gray-200");
-  $("#settingsNavAnchor").removeClass("bg-gray-200");
+  $("#homeNavAnchor").removeClass("bg-gray-200");
 }
 
-function navToReminders() {
-  $("#mainContainer").load("reminders.html");
+function navToHome() {
+  $("#mainContainer").load("home.html");
 
   $("#notesNavAnchor").removeClass("bg-gray-200");
-  $("#remindersNavAnchor").addClass("bg-gray-200");
-  $("#settingsNavAnchor").removeClass("bg-gray-200");
-}
-
-function navToSettings() {
-  $("#mainContainer").load("settings.html");
-
-  $("#notesNavAnchor").removeClass("bg-gray-200");
-  $("#remindersNavAnchor").removeClass("bg-gray-200");
-  $("#settingsNavAnchor").addClass("bg-gray-200");
+  $("#homeNavAnchor").addClass("bg-gray-200");
 }
 
 function navToAddNote() {
@@ -40,7 +30,6 @@ function navToAddNote() {
 
   $("#notesNavAnchor").addClass("bg-gray-200");
   $("#remindersNavAnchor").removeClass("bg-gray-200");
-  $("#settingsNavAnchor").removeClass("bg-gray-200");
 }
 
 class Note {

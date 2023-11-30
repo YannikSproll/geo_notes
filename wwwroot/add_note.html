@@ -3,6 +3,42 @@
         <span class="flex-grow-0 flex-shrink-0 text-4xl">
             Add Note
         </span>
-
     </div>
-</div>  
+
+    <div class="flex-grow flex-shrink px-4 mt-4">
+        <div class="flex w-full h-fit items-center bg-white border rounded-sm overflow-hidden shadow p-3 mb-2 space-y-4">
+            <div class="w-full h-fit grid grid-cols-1 grid-rows-5 md:grid-rows-4 gap-x-6 gap-y-6">
+                <div class="row-start-1">
+                    <label for="title" class="block text-sm font-medium leading-6 text-gray-900">Title</label>
+                    <div class="mt-2 flex flex-col items-stretch">
+                        <div
+                            class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-orange-600 px-1">
+                            <input id="addNoteTitleInput" type="text" name="title"
+                                class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 focus:ring-0 sm:text-sm sm:leading-6">
+                        </div>
+                    </div>
+                </div>
+                <div class="row-start-2 row-span-3 md:row-span-2 flex flex-col items-stretch">
+                    <label for="content" class="block text-sm font-medium leading-6 text-gray-900">Content</label>
+                    <div class="mt-2 flex-grow flex-shrink flex flex-col items-stretch">
+                        <div
+                            class="flex-grow flex-shrink flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-orange-600 px-1">
+                            <textarea id="addNodeContentTextArea" name="content"
+                                class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 focus:ring-0 sm:text-sm sm:leading-6"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row-start-5 md:row-start-4 flex flex-row justify-end items-center space-x-4">
+                    <button onclick="navToNotes()" class="px-3 py-2 rounded-md bg-gray-200">
+                        Cancel
+                    </button>
+                    <button onclick="addNote()" class="px-3 py-2 rounded-md bg-orange-600 text-white">
+                        Add
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>

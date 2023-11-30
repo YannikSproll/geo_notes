@@ -1,3 +1,5 @@
+const { DateTime } = luxon;
+
 
 window.onload = function () {
   navToNotes();
@@ -10,9 +12,12 @@ function toogleSideBar() {
 function navToNotes() {
   $("#mainContainer").load("notes.html", function() {
     const notesList = $("#notesList");
-
-    
-
+    const n = new Note(
+      "Bananen kaufen",
+      "Banananananananananannananannanananananananananananananana",
+      DateTime.now()
+    );
+    notesList.append(createNoteListElement(n));
   });
 
   $("#notesNavAnchor").addClass("bg-gray-200");
@@ -55,7 +60,7 @@ class Note {
 function addNote() {
   const title = $("#addNoteTitleInput").val();
   const content = $("#addNodeContentTextArea").val();
-  const createdAt = getTimestampInSeconds();
+  const createdAt = DateTime.now();
 
   // TODO: validate
   const note = new Note(
@@ -64,6 +69,9 @@ function addNote() {
     createdAt
   );
 
+
+
+////////////////////////////////////////////////////////////////////////
   openDatabase(
     (event) => saveNote(event.target.result, note),
     function onError(event) {
@@ -92,6 +100,8 @@ function saveNote(db, note) {
   };
 }
 
+
+/////////////////////////////////////////////////////// Database utility
 const DATABASE_NAME = "GeoNotesDatabase";
 const DATABASE_VERSION = 3;
 const NOTES_OBJECT_STORE_NAME = "Notes";
@@ -120,7 +130,95 @@ function createObjectStores(event) {
   const objectStore = db.createObjectStore(NOTES_OBJECT_STORE_NAME, { autoIncrement: true });
   console.log("ObjectStore " + NOTES_OBJECT_STORE_NAME + " created.");
 }
+///////////////////////////////////////////////////////////////////////////////// Timestamp utility
 
-function getTimestampInSeconds() {
-  return Math.floor(Date.now() / 1000);
+
+/////////////////////////////////////////////////////////////////////////////// Creation of note html
+
+function createNoteListElement(note) {
+  const noteIcon = createNoteIcon(note.title.charAt(0));
+  const noteTextDiv = createNoteTextDiv(note);
+  const noteDeleteButton = createDeleteButton();
+
+  const wrapperDiv = $("<div></div>", {
+    "class" : "flex items-center bg-white border rounded-sm overflow-hidden shadow"
+  });
+
+  const listItemElement = $("<li></li>");
+
+  return listItemElement
+    .append(wrapperDiv
+      .append(noteIcon)
+      .append(noteTextDiv)
+      .append(noteDeleteButton));
+}
+
+function createNoteIcon(iconCharacter) {
+  const spanElement = $("<span></span>", {
+    "class" : "text-7xl text-white",
+    "text" : iconCharacter
+  });
+  
+  const wrapperDiv = $("<div></div>", {
+    "class" : "flex-grow-0 flex-shrink-0 flex justify-center items-center w-20 h-20 bg-green-400"
+  });
+
+  return wrapperDiv.append(spanElement);
+}
+
+function createNoteTextDiv(note) {
+  const contentSpanElement = $("<span></span>", {
+    "class" : "text-lg truncate tracking-wider min-w-0",
+    "text" : note.content
+  });
+
+  const titleSpanElement = $("<span></span>", {
+    "class" : "flex-grow-0 flex-shrink-0 text-2xl",
+    "text" : note.title
+  });
+
+  const expanderElement = $("<div></div>", {
+    "class" : "flex-grow flex-shrink"
+  });
+
+  const createdAtSpanElement = $("<span></span>", {
+    "class" : "flex-grow-0 flex-shrink-0 text-md",
+    "text" : note.createdAt.toFormat('MM/dd/yyyy h:mm a')
+  });
+
+  const titleLineWrapperDiv = $("<div></div>", {
+    "class" : "flex flex-row items-center"
+  });
+
+  const linebreakParagraph = $("<p></p>");
+
+  const wrapperDiv = $("<div></div>", {
+    "class" : "flex-grow flex-shrink px-4 text-gray-700 min-w-0 overflow-hidden"
+  });
+
+  return wrapperDiv
+    .append(titleLineWrapperDiv
+      .append(titleSpanElement)
+      .append(expanderElement)
+      .append(createdAtSpanElement))
+    .append(linebreakParagraph)
+    .append(contentSpanElement);
+}
+
+function createDeleteButton() {
+  const iconElement = $("<i></i>", {
+    "class" : "bi bi-trash-fill text-white text-2xl"
+  });
+
+  const buttonElement = $("<button></button>", {
+    "class" : "bg-red-600 w-12 h-12 rounded-md shadow"
+  });
+
+  const wrapperDiv = $("<div></div>", {
+    "class" : "flex-grow-0 flex-shrink-0 self-stretch flex items-center px-3"
+  });
+
+  return wrapperDiv
+    .append(buttonElement
+      .append(iconElement));
 }

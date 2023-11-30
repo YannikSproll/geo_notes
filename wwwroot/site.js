@@ -10,14 +10,8 @@ function toogleSideBar() {
 }
 
 function navToNotes() {
-  $("#mainContainer").load("notes.html", function() {
-    const notesList = $("#notesList");
-    const n = new Note(
-      "Bananen kaufen",
-      "Banananananananananannananannanananananananananananananana",
-      DateTime.now()
-    );
-    notesList.append(createNoteListElement(n));
+  $("#mainContainer").load("notes.html", function () {
+    loadAllNotes();
   });
 
   $("#notesNavAnchor").addClass("bg-gray-200");
@@ -60,7 +54,7 @@ class Note {
 function addNote() {
   const title = $("#addNoteTitleInput").val();
   const content = $("#addNodeContentTextArea").val();
-  const createdAt = DateTime.now();
+  const createdAt = DateTime.now().toSeconds();
 
   // TODO: validate
   const note = new Note(
@@ -69,14 +63,10 @@ function addNote() {
     createdAt
   );
 
-
-
-////////////////////////////////////////////////////////////////////////
   openDatabase(
     (event) => saveNote(event.target.result, note),
     function onError(event) {
       //TODO: Handle
-      event.target.result.close();
     }
   );
 }
@@ -100,12 +90,48 @@ function saveNote(db, note) {
   };
 }
 
+function loadAllNotes() {
+  openDatabase(
+    (event) => _loadAllNotes(event.target.result),
+    (event) => { }
+  );
+}
+
+function _loadAllNotes(db) {
+  const request = db
+    .transaction(NOTES_OBJECT_STORE_NAME, TRANACTION_TYPE_READ_ONLY)
+    .objectStore(NOTES_OBJECT_STORE_NAME)
+    .getAll();
+
+  request.onsuccess = (event) => {
+    console.log("Notes loaded.");    
+
+    const notes = event.target.result;
+
+    const notesList = $("#notesList");
+
+    for (var i = 0; i < notes.length; i++){
+      const note = notes[i];
+      notesList.append(createNoteListElement(note));
+    }
+
+    db.close();
+  };
+
+  request.onerror = (event) => {
+    console.log("Note loading failed.");
+    db.close();
+    alert("Failed to load note.");
+  }
+}
+
 
 /////////////////////////////////////////////////////// Database utility
 const DATABASE_NAME = "GeoNotesDatabase";
 const DATABASE_VERSION = 3;
 const NOTES_OBJECT_STORE_NAME = "Notes";
 const TRANACTION_TYPE_READ_WRITE = "readwrite";
+const TRANACTION_TYPE_READ_ONLY = "readonly";
 
 function openDatabase(onSuccess, onError) {
   const request = window.indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
@@ -141,7 +167,7 @@ function createNoteListElement(note) {
   const noteDeleteButton = createDeleteButton();
 
   const wrapperDiv = $("<div></div>", {
-    "class" : "flex items-center bg-white border rounded-sm overflow-hidden shadow"
+    "class": "flex items-center bg-white border rounded-sm overflow-hidden shadow"
   });
 
   const listItemElement = $("<li></li>");
@@ -155,12 +181,12 @@ function createNoteListElement(note) {
 
 function createNoteIcon(iconCharacter) {
   const spanElement = $("<span></span>", {
-    "class" : "text-7xl text-white",
-    "text" : iconCharacter
+    "class": "text-7xl text-white",
+    "text": iconCharacter
   });
-  
+
   const wrapperDiv = $("<div></div>", {
-    "class" : "flex-grow-0 flex-shrink-0 flex justify-center items-center w-20 h-20 bg-green-400"
+    "class": "flex-grow-0 flex-shrink-0 flex justify-center items-center w-20 h-20 bg-green-400"
   });
 
   return wrapperDiv.append(spanElement);
@@ -168,32 +194,32 @@ function createNoteIcon(iconCharacter) {
 
 function createNoteTextDiv(note) {
   const contentSpanElement = $("<span></span>", {
-    "class" : "text-lg truncate tracking-wider min-w-0",
-    "text" : note.content
+    "class": "text-lg truncate tracking-wider min-w-0",
+    "text": note.content
   });
 
   const titleSpanElement = $("<span></span>", {
-    "class" : "flex-grow-0 flex-shrink-0 text-2xl",
-    "text" : note.title
+    "class": "flex-grow-0 flex-shrink-0 text-2xl",
+    "text": note.title
   });
 
   const expanderElement = $("<div></div>", {
-    "class" : "flex-grow flex-shrink"
+    "class": "flex-grow flex-shrink"
   });
 
   const createdAtSpanElement = $("<span></span>", {
-    "class" : "flex-grow-0 flex-shrink-0 text-md",
-    "text" : note.createdAt.toFormat('MM/dd/yyyy h:mm a')
+    "class": "flex-grow-0 flex-shrink-0 text-md",
+    "text": DateTime.fromSeconds(note.createdAt).toFormat('MM/dd/yyyy h:mm a')
   });
 
   const titleLineWrapperDiv = $("<div></div>", {
-    "class" : "flex flex-row items-center"
+    "class": "flex flex-row items-center"
   });
 
   const linebreakParagraph = $("<p></p>");
 
   const wrapperDiv = $("<div></div>", {
-    "class" : "flex-grow flex-shrink px-4 text-gray-700 min-w-0 overflow-hidden"
+    "class": "flex-grow flex-shrink px-4 text-gray-700 min-w-0 overflow-hidden"
   });
 
   return wrapperDiv
@@ -207,15 +233,15 @@ function createNoteTextDiv(note) {
 
 function createDeleteButton() {
   const iconElement = $("<i></i>", {
-    "class" : "bi bi-trash-fill text-white text-2xl"
+    "class": "bi bi-trash-fill text-white text-2xl"
   });
 
   const buttonElement = $("<button></button>", {
-    "class" : "bg-red-600 w-12 h-12 rounded-md shadow"
+    "class": "bg-red-600 w-12 h-12 rounded-md shadow"
   });
 
   const wrapperDiv = $("<div></div>", {
-    "class" : "flex-grow-0 flex-shrink-0 self-stretch flex items-center px-3"
+    "class": "flex-grow-0 flex-shrink-0 self-stretch flex items-center px-3"
   });
 
   return wrapperDiv

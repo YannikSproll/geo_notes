@@ -61,16 +61,16 @@ function toogleSideBar() {
 }
 
 function isSideBarOpen() {
-  return !$("#sideBarContainer").hasClass("collapse");
+  return !$("#sideBarContainer").hasClass("hidden");
 }
 
 function openSideBar() {
-  $("#sideBarContainer").removeClass("collapse");
+  $("#sideBarContainer").removeClass("hidden");
   window.localStorage.setItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY, SIDEBAR_OPEN);
 }
 
 function closeSideBar() {
-  $("#sideBarContainer").addClass("collapse");
+  $("#sideBarContainer").addClass("hidden");
   window.localStorage.setItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY, SIDEBAR_CLOSE);
 }
 
@@ -399,19 +399,29 @@ function setupGeolocation() {
 }
 
 function requestGeolocationPermission() {
-  navigator.geolocation.getCurrentPosition(function(location) { 
+  navigator.geolocation.watchPosition(function(location) { 
     clearHomeWrapper();
     showPositionOnHomePage(location.coords);
+  },
+  function(error) {
+    var i = 5;
   });
+
   navigator.permissions.query({ name: "geolocation" }).then((result) => {
     if (result.state === "granted") {
+      showToast("GPS permission granted.");
+    } else if (result.state == "prompt") {
+      showToast("GPS permission prompt.");
+      clearHomeWrapper();
+      $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
     } else {
+      showToast("GPS permission denied.");
       clearHomeWrapper();
       $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
     }
-    result.addEventListener("change", () => {
-      report(result.state);
-    });
+    // result.addEventListener("change", () => {
+    //   report(result.state);
+    // });
   });
 }
 

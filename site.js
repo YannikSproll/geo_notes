@@ -10,6 +10,12 @@ const HOME_MAIN_CONTAINER_STATE = "home";
 const NOTES_MAIN_CONTAINER_STATE = "notes";
 const ADD_NOTE_MAIN_CONTAINER_STATE = "add_note";
 
+var window_md_JS_media_query = window.matchMedia("(min-width: 768px)");
+
+function isMediumOrBiggerScreen() {
+  return !window_md_JS_media_query.matches;
+}
+
 window.onload = function () {
   loadSideBarState();
   loadMainContainerState();
@@ -76,6 +82,10 @@ function navToNotes() {
   $("#notesNavAnchor").addClass("bg-gray-200");
   $("#homeNavAnchor").removeClass("bg-gray-200");
 
+  if (isMediumOrBiggerScreen()) {
+    closeSideBar();
+  }
+
   window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, NOTES_MAIN_CONTAINER_STATE);
 }
 
@@ -86,6 +96,10 @@ function navToHome() {
 
   $("#notesNavAnchor").removeClass("bg-gray-200");
   $("#homeNavAnchor").addClass("bg-gray-200");
+
+  if (isMediumOrBiggerScreen()) {
+    closeSideBar();
+  }
 
   window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, HOME_MAIN_CONTAINER_STATE);
 }

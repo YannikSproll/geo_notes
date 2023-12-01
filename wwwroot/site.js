@@ -126,9 +126,21 @@ function addNote() {
   useDatabase(
     (event) => saveNote(event.target.result, note),
     function onError(event) {
-      //TODO: Handle
+      showToast("Failed to save note.");
     }
   );
+}
+
+function showToast(content) {
+  Toastify({
+    text: content,
+    duration: 4000,
+    newWindow: false,
+    close: false,
+    gravity: "top",
+    position: "right",
+    stopOnFocus: false,
+  }).showToast();
 }
 
 function saveNote(db, note) {
@@ -138,8 +150,11 @@ function saveNote(db, note) {
     .add(note);
 
   request.onsuccess = (event) => {
-    console.log("Note saved");
+    console.log("Note created.");
     db.close();
+
+    showToast("Note created.");
+
     navToNotes();
   };
 
@@ -158,7 +173,7 @@ function loadAllNotes() {
   clearNotes();
   useDatabase(
     (event) => _loadAllNotes(event.target.result),
-    (event) => { }
+    (event) => showToast("Failed to load notes.")
   );
 }
 
@@ -184,9 +199,9 @@ function _loadAllNotes(db) {
   };
 
   request.onerror = (event) => {
-    console.log("Note loading failed.");
+    console.log("Failed to load notes.");
     db.close();
-    alert("Failed to load note.");
+    showToast("Failed to load notes.")
   }
 }
 
@@ -208,13 +223,15 @@ function _deleteNote(db, noteId) {
 
       db.close();
 
+      showToast("Note deleted.");
+
       loadAllNotes();
     };
   
     request.onerror = (event) => {
-      console.log("Note loading failed.");
+      console.log("Failed to delete note.");
       db.close();
-      alert("Failed to load note.");
+      showToast("Failed to delete note.");
     }
 }
 

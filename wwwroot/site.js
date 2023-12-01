@@ -1,3 +1,4 @@
+// import { v4 as uuidv4 } from 'uuid';
 const { DateTime } = luxon;
 
 const IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY = "isSideBarOpen";
@@ -70,8 +71,10 @@ function navToAddNote() {
   $("#remindersNavAnchor").removeClass("bg-gray-200");
 }
 
+
 class Note {
-  constructor(title, content, createdAt) {
+  constructor(id, title, content, createdAt) {
+    this.id = id;
     this.title = title;
     this.content = content;
     this.createdAt = createdAt;
@@ -79,18 +82,20 @@ class Note {
 }
 
 function addNote() {
+  const id = crypto.randomUUID();
   const title = $("#addNoteTitleInput").val();
   const content = $("#addNodeContentTextArea").val();
   const createdAt = DateTime.now().toSeconds();
 
   // TODO: validate
   const note = new Note(
+    id,
     title,
     content,
     createdAt
   );
 
-  openDatabase(
+  useDatabase(
     (event) => saveNote(event.target.result, note),
     function onError(event) {
       //TODO: Handle
@@ -117,8 +122,13 @@ function saveNote(db, note) {
   };
 }
 
+function clearNotes() {
+  $("#notesList").empty();
+}
+
 function loadAllNotes() {
-  openDatabase(
+  clearNotes();
+  useDatabase(
     (event) => _loadAllNotes(event.target.result),
     (event) => { }
   );
@@ -152,6 +162,33 @@ function _loadAllNotes(db) {
   }
 }
 
+function deleteNote(noteId) {
+  useDatabase(
+    (event) => _deleteNote(event.target.result, noteId),
+    (event) => { }
+  );
+}
+
+function _deleteNote(db, noteId) {
+  const request = db
+    .transaction(NOTES_OBJECT_STORE_NAME, TRANACTION_TYPE_READ_WRITE)
+    .objectStore(NOTES_OBJECT_STORE_NAME)
+    .delete(noteId);
+
+    request.onsuccess = (event) => {
+      console.log("Note with id " + noteId + " deleted.");   
+
+      db.close();
+
+      loadAllNotes();
+    };
+  
+    request.onerror = (event) => {
+      console.log("Note loading failed.");
+      db.close();
+      alert("Failed to load note.");
+    }
+}
 
 /////////////////////////////////////////////////////// Database utility
 const DATABASE_NAME = "GeoNotesDatabase";
@@ -160,7 +197,7 @@ const NOTES_OBJECT_STORE_NAME = "Notes";
 const TRANACTION_TYPE_READ_WRITE = "readwrite";
 const TRANACTION_TYPE_READ_ONLY = "readonly";
 
-function openDatabase(onSuccess, onError) {
+function useDatabase(onSuccess, onError) {
   const request = window.indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
 
   request.onerror = (event) => {
@@ -180,7 +217,7 @@ function createObjectStores(event) {
   const db = event.target.result;
 
   // Create an objectStore for this database
-  const objectStore = db.createObjectStore(NOTES_OBJECT_STORE_NAME, { autoIncrement: true });
+  const objectStore = db.createObjectStore(NOTES_OBJECT_STORE_NAME, { keyPath: "id" });
   console.log("ObjectStore " + NOTES_OBJECT_STORE_NAME + " created.");
 }
 ///////////////////////////////////////////////////////////////////////////////// Timestamp utility
@@ -191,7 +228,7 @@ function createObjectStores(event) {
 function createNoteListElement(note) {
   const noteIcon = createNoteIcon(note.title.charAt(0));
   const noteTextDiv = createNoteTextDiv(note);
-  const noteDeleteButton = createDeleteButton();
+  const noteDeleteButton = createDeleteButton(note);
 
   const wrapperDiv = $("<div></div>", {
     "class": "flex items-center bg-white border rounded-sm overflow-hidden shadow"
@@ -258,13 +295,16 @@ function createNoteTextDiv(note) {
     .append(contentSpanElement);
 }
 
-function createDeleteButton() {
+function createDeleteButton(noteToDelete) {
   const iconElement = $("<i></i>", {
     "class": "bi bi-trash-fill text-white text-2xl"
   });
 
   const buttonElement = $("<button></button>", {
-    "class": "bg-red-600 w-12 h-12 rounded-md shadow"
+    "class": "bg-red-600 w-12 h-12 rounded-md shadow",
+    "click" : function() {
+      deleteNote(noteToDelete.id);
+    }
   });
 
   const wrapperDiv = $("<div></div>", {

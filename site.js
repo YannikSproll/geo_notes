@@ -1,12 +1,48 @@
 const { DateTime } = luxon;
 
+const IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY = "isSideBarOpen";
+const SIDEBAR_OPEN = "open";
+const SIDEBAR_CLOSE = "closed";
 
 window.onload = function () {
+  loadSideBarState();
   navToHome();
 }
 
+function loadSideBarState() {
+  const storedIsSideBarOpen = window.localStorage.getItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY);
+
+  if (storedIsSideBarOpen == null) {
+    return;
+  }
+
+  if (storedIsSideBarOpen == SIDEBAR_OPEN) {
+    openSideBar();
+  } else if (storedIsSideBarOpen == SIDEBAR_CLOSE) {
+    closeSideBar();
+  }
+}
+
 function toogleSideBar() {
-  $("#sideBarContainer").toggleClass("collapse");
+  if (isSideBarOpen()) {
+    closeSideBar();
+  } else {
+    openSideBar();
+  }
+}
+
+function isSideBarOpen() {
+  return !$("#sideBarContainer").hasClass("collapse");
+}
+
+function openSideBar() {
+  $("#sideBarContainer").removeClass("collapse");
+  window.localStorage.setItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY, SIDEBAR_OPEN);
+}
+
+function closeSideBar() {
+  $("#sideBarContainer").addClass("collapse");
+  window.localStorage.setItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY, SIDEBAR_CLOSE);
 }
 
 function navToNotes() {

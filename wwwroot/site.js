@@ -5,9 +5,31 @@ const IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY = "isSideBarOpen";
 const SIDEBAR_OPEN = "open";
 const SIDEBAR_CLOSE = "closed";
 
+const MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY = "mainContainerState";
+const HOME_MAIN_CONTAINER_STATE = "home";
+const NOTES_MAIN_CONTAINER_STATE = "notes";
+const ADD_NOTE_MAIN_CONTAINER_STATE = "add_note";
+
 window.onload = function () {
   loadSideBarState();
-  navToHome();
+  loadMainContainerState();
+}
+
+function loadMainContainerState() {
+  const storedMainContainerState = window.localStorage.getItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY);
+
+  if (storedMainContainerState == null) {
+    navToHome();
+    return;
+  }
+
+  if (storedMainContainerState == NOTES_MAIN_CONTAINER_STATE) {
+    navToNotes();
+  } else if (storedMainContainerState == ADD_NOTE_MAIN_CONTAINER_STATE) {
+    navToAddNote();
+  } else {
+    navToHome();
+  }
 }
 
 function loadSideBarState() {
@@ -53,6 +75,8 @@ function navToNotes() {
 
   $("#notesNavAnchor").addClass("bg-gray-200");
   $("#homeNavAnchor").removeClass("bg-gray-200");
+
+  window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, NOTES_MAIN_CONTAINER_STATE);
 }
 
 function navToHome() {
@@ -62,6 +86,8 @@ function navToHome() {
 
   $("#notesNavAnchor").removeClass("bg-gray-200");
   $("#homeNavAnchor").addClass("bg-gray-200");
+
+  window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, HOME_MAIN_CONTAINER_STATE);
 }
 
 function navToAddNote() {
@@ -69,6 +95,8 @@ function navToAddNote() {
 
   $("#notesNavAnchor").addClass("bg-gray-200");
   $("#remindersNavAnchor").removeClass("bg-gray-200");
+
+  window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, ADD_NOTE_MAIN_CONTAINER_STATE);
 }
 
 

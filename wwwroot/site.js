@@ -109,11 +109,25 @@ class Note {
   }
 }
 
+function isStringNullOrEmpty(str) {
+  return str != null && str == "";
+}
+
 function addNote() {
   const id = crypto.randomUUID();
   const title = $("#addNoteTitleInput").val();
   const content = $("#addNodeContentTextArea").val();
   const createdAt = DateTime.now().toSeconds();
+
+  if (isStringNullOrEmpty(title)) {
+    showToast("Title may not be empty.");
+    return;
+  }
+
+  if (isStringNullOrEmpty(content)) {
+    showToast("Content may not be empty.");
+    return;
+  }
 
   // TODO: validate
   const note = new Note(
@@ -377,13 +391,9 @@ function requestGeolocationPermission() {
   });
   navigator.permissions.query({ name: "geolocation" }).then((result) => {
     if (result.state === "granted") {
-      // report(result.state);
-      // geoBtn.style.display = "none";
     } else {
       clearHomeWrapper();
       $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
-      // report(result.state);
-      // geoBtn.style.display = "inline";
     }
     result.addEventListener("change", () => {
       report(result.state);

@@ -7,8 +7,8 @@
 
     <div class="flex-grow flex-shrink px-4 mt-4">
         <div class="flex w-full h-fit items-center bg-white border rounded-sm overflow-hidden shadow p-3 mb-2 space-y-4">
-            <div class="w-full h-fit grid grid-cols-1 grid-rows-5 md:grid-rows-4 gap-x-6 gap-y-6">
-                <div class="row-start-1">
+            <div class="w-full grid grid-cols-2 grid-rows-8 md:grid-rows-7 gap-x-6 gap-y-6">
+                <div class="row-start-1 col-span-2">
                     <label for="title" class="block text-sm font-medium leading-6 text-gray-900">Title</label>
                     <div class="mt-2 flex flex-col items-stretch">
                         <div
@@ -18,7 +18,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="row-start-2 row-span-3 md:row-span-2 flex flex-col items-stretch">
+                <div class="row-start-2 row-span-3 md:row-span-2 col-span-2 flex flex-col items-stretch">
                     <label for="content" class="block text-sm font-medium leading-6 text-gray-900">Content</label>
                     <div class="mt-2 flex-grow flex-shrink flex flex-col items-stretch">
                         <div
@@ -29,7 +29,13 @@
                     </div>
                 </div>
 
-                <div class="row-start-5 md:row-start-4 flex flex-row justify-end items-center space-x-4">
+                <div class="row-start-5 row-span-3 md:row-span-2 col-span-1 h-96 md:h-48">
+                    <div class="h-full" id="add_notes_map">
+
+                    </div>
+                </div>
+
+                <div class="row-start-8 md:row-start-7 col-span-2 flex flex-row justify-end items-center space-x-4">
                     <button onclick="navToNotes()" class="px-3 py-2 rounded-md bg-gray-200">
                         Cancel
                     </button>

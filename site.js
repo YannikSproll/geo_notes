@@ -105,7 +105,13 @@ function navToHome() {
 }
 
 function navToAddNote() {
-  $("#mainContainer").load("add_note.html");
+  $("#mainContainer").load("add_note.html", function() {
+    var map = L.map('add_notes_map').setView([51.505, -0.09], 13);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+  });
 
   $("#notesNavAnchor").addClass("bg-gray-200");
   $("#remindersNavAnchor").removeClass("bg-gray-200");

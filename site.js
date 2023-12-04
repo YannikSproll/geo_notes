@@ -80,6 +80,8 @@ function closeSideBar() {
 }
 
 function navToHome() {
+  destroyCurrentPage();
+
   $("#mainContainer").load("home.html", initHomePage);
 
   $("#notesNavAnchor").removeClass("bg-gray-200");
@@ -93,6 +95,8 @@ function navToHome() {
 }
 
 function navToNotes() {
+  destroyCurrentPage();
+
   $("#mainContainer").load("notes.html", initNotesPage);
 
   $("#notesNavAnchor").addClass("bg-gray-200");
@@ -106,12 +110,26 @@ function navToNotes() {
 }
 
 function navToAddNote() {
+  destroyCurrentPage();
+
   $("#mainContainer").load("add_note.html", initAddNotePage);
 
   $("#notesNavAnchor").addClass("bg-gray-200");
   $("#remindersNavAnchor").removeClass("bg-gray-200");
 
   window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, ADD_NOTE_MAIN_CONTAINER_STATE);
+}
+
+function destroyCurrentPage() {
+  const storedMainContainerState = window.localStorage.getItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY);
+
+  if (storedMainContainerState == null) {
+    return;
+  }
+
+  if (storedMainContainerState == ADD_NOTE_MAIN_CONTAINER_STATE) {
+    destroyAddNotePage();
+  }
 }
 
 
@@ -397,6 +415,15 @@ function initAddNotePage () {
     map.on('click', onMapClicked);
 }
 
+function destroyAddNotePage() {
+  if (map != null) {
+    map.remove();
+    map = null;
+  }
+
+  marker = null;
+}
+
 /////////////////////////////// Map Handling
 
 function onMapClicked(e) {
@@ -422,8 +449,8 @@ function onGetCurrentPositionError(error) {
 function applyLocation(latitude, longitude) {
   placeMarker(latitude, longitude);
 
-  $("#addNoteLatitudeInput").val(e.latlng.lat);
-  $("#addNoteLongitudeInput").val(e.latlng.lng);
+  $("#addNoteLatitudeInput").val(latitude);
+  $("#addNoteLongitudeInput").val(longitude);
 }
 
 function placeMarker(lat, lng) {

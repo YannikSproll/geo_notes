@@ -14,19 +14,133 @@ const HOME_MAIN_CONTAINER_STATE = "home";
 const NOTES_MAIN_CONTAINER_STATE = "notes";
 const ADD_NOTE_MAIN_CONTAINER_STATE = "add_note";
 
-
-var window_md_JS_media_query = window.matchMedia("(min-width: 768px)");
-
 window.onload = function () {
   loadSideBarState();
   loadMainContainerState();
   setUpLocationListener();
 }
 
-var geolocationListenerId = null;
-function isListeningToGeolocationChanges() {
-  return geolocationListenerId != null;
+/////////////////////////////// Javascript media queries
+
+var window_md_JS_media_query = window.matchMedia("(min-width: 768px)");
+
+function isMediumOrBiggerScreen() {
+  return !window_md_JS_media_query.matches;
 }
+
+/////////////////////////////// Layout state persisting
+
+function loadMainContainerState() {
+  const storedMainContainerState = window.localStorage.getItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY);
+
+  if (storedMainContainerState == null) {
+    navToHome();
+    return;
+  }
+
+  if (storedMainContainerState == NOTES_MAIN_CONTAINER_STATE) {
+    navToNotes();
+  } else if (storedMainContainerState == ADD_NOTE_MAIN_CONTAINER_STATE) {
+    navToAddNote();
+  } else {
+    navToHome();
+  }
+}
+
+function loadSideBarState() {
+  const storedIsSideBarOpen = window.localStorage.getItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY);
+
+  if (storedIsSideBarOpen == null) {
+    return;
+  }
+
+  if (storedIsSideBarOpen == SIDEBAR_OPEN) {
+    openSideBar();
+  } else if (storedIsSideBarOpen == SIDEBAR_CLOSE) {
+    closeSideBar();
+  }
+}
+
+/////////////////////////////// SideBar
+
+function toogleSideBar() {
+  if (isSideBarOpen()) {
+    closeSideBar();
+  } else {
+    openSideBar();
+  }
+}
+
+function isSideBarOpen() {
+  return !$("#sideBarContainer").hasClass("hidden");
+}
+
+function openSideBar() {
+  $("#sideBarContainer").removeClass("hidden");
+  window.localStorage.setItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY, SIDEBAR_OPEN);
+}
+
+function closeSideBar() {
+  $("#sideBarContainer").addClass("hidden");
+  window.localStorage.setItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY, SIDEBAR_CLOSE);
+}
+
+/////////////////////////////// Navigation
+
+function navToHome() {
+  destroyCurrentPage();
+
+  $("#mainContainer").load("home.html", initHomePage);
+
+  $("#notesNavAnchor").removeClass("bg-gray-200");
+  $("#homeNavAnchor").addClass("bg-gray-200");
+
+  if (isMediumOrBiggerScreen()) {
+    closeSideBar();
+  }
+
+  window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, HOME_MAIN_CONTAINER_STATE);
+}
+
+function navToNotes() {
+  destroyCurrentPage();
+
+  $("#mainContainer").load("notes.html", initNotesPage);
+
+  $("#notesNavAnchor").addClass("bg-gray-200");
+  $("#homeNavAnchor").removeClass("bg-gray-200");
+
+  if (isMediumOrBiggerScreen()) {
+    closeSideBar();
+  }
+
+  window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, NOTES_MAIN_CONTAINER_STATE);
+}
+
+function navToAddNote() {
+  destroyCurrentPage();
+
+  $("#mainContainer").load("add_note.html", initAddNotePage);
+
+  $("#notesNavAnchor").addClass("bg-gray-200");
+  $("#remindersNavAnchor").removeClass("bg-gray-200");
+
+  window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, ADD_NOTE_MAIN_CONTAINER_STATE);
+}
+
+function destroyCurrentPage() {
+  const storedMainContainerState = window.localStorage.getItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY);
+
+  if (storedMainContainerState == null) {
+    return;
+  }
+
+  if (storedMainContainerState == ADD_NOTE_MAIN_CONTAINER_STATE) {
+    destroyAddNotePage();
+  }
+}
+
+/////////////////////////////// Global Geolocation Handling
 
 function isGeolocationSupported() {
   return navigator.geolocation;
@@ -89,13 +203,12 @@ function onGeolocationPermissionPrompt() {
 function onGeolocationPermissionDenied() {
   showToast("GPS permission denied.");
 
-  clearHomeWrapper();
-  $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
+  updateHomePageWithGeolocationPermissionDenied();
 }
 
 function onNewGeolocation(latitude, longitude) {
   updateNoteNotification(latitude, longitude);
-  updateHomePageLocationDisplay(latitude, longitude);
+  updateHomePageWithNewLocation(latitude, longitude);
 }
 
 function updateNoteNotification(latitude, longitude) {
@@ -119,119 +232,6 @@ function updateNoteNotification(latitude, longitude) {
   });
 }
 
-
-
-function isMediumOrBiggerScreen() {
-  return !window_md_JS_media_query.matches;
-}
-
-function loadMainContainerState() {
-  const storedMainContainerState = window.localStorage.getItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY);
-
-  if (storedMainContainerState == null) {
-    navToHome();
-    return;
-  }
-
-  if (storedMainContainerState == NOTES_MAIN_CONTAINER_STATE) {
-    navToNotes();
-  } else if (storedMainContainerState == ADD_NOTE_MAIN_CONTAINER_STATE) {
-    navToAddNote();
-  } else {
-    navToHome();
-  }
-}
-
-function loadSideBarState() {
-  const storedIsSideBarOpen = window.localStorage.getItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY);
-
-  if (storedIsSideBarOpen == null) {
-    return;
-  }
-
-  if (storedIsSideBarOpen == SIDEBAR_OPEN) {
-    openSideBar();
-  } else if (storedIsSideBarOpen == SIDEBAR_CLOSE) {
-    closeSideBar();
-  }
-}
-
-function toogleSideBar() {
-  if (isSideBarOpen()) {
-    closeSideBar();
-  } else {
-    openSideBar();
-  }
-}
-
-function isSideBarOpen() {
-  return !$("#sideBarContainer").hasClass("hidden");
-}
-
-function openSideBar() {
-  $("#sideBarContainer").removeClass("hidden");
-  window.localStorage.setItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY, SIDEBAR_OPEN);
-}
-
-function closeSideBar() {
-  $("#sideBarContainer").addClass("hidden");
-  window.localStorage.setItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY, SIDEBAR_CLOSE);
-}
-
-function navToHome() {
-  destroyCurrentPage();
-
-  $("#mainContainer").load("home.html", initHomePage);
-
-  $("#notesNavAnchor").removeClass("bg-gray-200");
-  $("#homeNavAnchor").addClass("bg-gray-200");
-
-  if (isMediumOrBiggerScreen()) {
-    closeSideBar();
-  }
-
-  window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, HOME_MAIN_CONTAINER_STATE);
-}
-
-function navToNotes() {
-  destroyCurrentPage();
-
-  $("#mainContainer").load("notes.html", initNotesPage);
-
-  $("#notesNavAnchor").addClass("bg-gray-200");
-  $("#homeNavAnchor").removeClass("bg-gray-200");
-
-  if (isMediumOrBiggerScreen()) {
-    closeSideBar();
-  }
-
-  window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, NOTES_MAIN_CONTAINER_STATE);
-}
-
-function navToAddNote() {
-  destroyCurrentPage();
-
-  $("#mainContainer").load("add_note.html", initAddNotePage);
-
-  $("#notesNavAnchor").addClass("bg-gray-200");
-  $("#remindersNavAnchor").removeClass("bg-gray-200");
-
-  window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, ADD_NOTE_MAIN_CONTAINER_STATE);
-}
-
-function destroyCurrentPage() {
-  const storedMainContainerState = window.localStorage.getItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY);
-
-  if (storedMainContainerState == null) {
-    return;
-  }
-
-  if (storedMainContainerState == ADD_NOTE_MAIN_CONTAINER_STATE) {
-    destroyAddNotePage();
-  }
-}
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////// Home Page
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -243,14 +243,19 @@ function initHomePage() {
 function setupGeolocation() {
   if (isGeolocationSupported()) {
     navigator.geolocation.getCurrentPosition(function(result) {
-      updateHomePageLocationDisplay(result.coords.latitude, result.coords.longitude);
+      updateHomePageWithNewLocation(result.coords.latitude, result.coords.longitude);
     });
   }
 }
 
-function updateHomePageLocationDisplay(latitude, longitude) {
+function updateHomePageWithNewLocation(latitude, longitude) {
   clearHomeWrapper();
   $("#homeWrapper").append(createShowCurrentLocationElement(latitude, longitude));
+}
+
+function updateHomePageWithGeolocationPermissionDenied() {
+  clearHomeWrapper();
+  $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
 }
 
 function clearHomeWrapper() {

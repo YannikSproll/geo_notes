@@ -20,7 +20,106 @@ var window_md_JS_media_query = window.matchMedia("(min-width: 768px)");
 window.onload = function () {
   loadSideBarState();
   loadMainContainerState();
+  setUpLocationListener();
 }
+
+var geolocationListenerId = null;
+function isListeningToGeolocationChanges() {
+  return geolocationListenerId != null;
+}
+
+function isGeolocationSupported() {
+  return navigator.geolocation;
+}
+
+function setUpLocationListener() {
+  if (!isGeolocationSupported()) {
+    showToast("This device does not support geolocation.");
+  }
+
+  navigator.permissions
+    .query({ name: "geolocation" })
+    .then((result) => {
+      onPermissionQueryCallback(result);
+
+      result.onchange = () => {
+        onPermissionQueryCallback(result);
+      };
+    });
+}
+
+function onPermissionQueryCallback(result) {
+  if (result.state === "granted") {
+    onGeolocationPermissionGranted();
+  } else if (result.state == "prompt") {
+    onGeolocationPermissionPrompt();
+  } else {
+    onGeolocationPermissionDenied();
+  }
+}
+
+function onGeolocationPermissionGranted() {
+  showToast("GPS permission granted.");
+
+  geolocationListenerId = navigator.geolocation.watchPosition(
+    function (c) {
+     onNewGeolocation(c.coords.latitude, c.coords.longitude);
+    },
+    function (e) {
+      console.log(e);
+    });
+}
+
+function onGeolocationPermissionPrompt() {
+  showToast("GPS permission prompt.");
+
+  geolocationListenerId = navigator.geolocation.watchPosition(
+    function (c) {      
+      onNewGeolocation(c.coords.latitude, c.coords.longitude);
+    },
+    function (e) {
+      if (e.code == 1) {
+        onGeolocationPermissionDenied();
+      }
+
+      console.log(e);
+    });
+}
+
+function onGeolocationPermissionDenied() {
+  showToast("GPS permission denied.");
+
+  clearHomeWrapper();
+  $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
+}
+
+function onNewGeolocation(latitude, longitude) {
+  updateNoteNotification(latitude, longitude);
+  updateHomePageLocationDisplay(latitude, longitude);
+}
+
+function updateNoteNotification(latitude, longitude) {
+  useDatabase(function(event) {
+
+    const geohash_filter = encode(latitude, longitude, 7);
+
+    const request = event.target.result
+      .transaction(NOTES_OBJECT_STORE_NAME, TRANACTION_TYPE_READ_ONLY)
+      .objectStore(NOTES_OBJECT_STORE_NAME)
+      .index(GEOHASH_INDEX_NAME)
+      .getAll(geohash_filter);
+
+      request.onsuccess = (event) => {
+        const notes = event.target.result;
+        console.log(notes.length +  " active notes found.");
+      };
+  },
+  function(error) {
+    console.log("Failed to fetch notes from database.");
+  });
+}
+
+
 
 function isMediumOrBiggerScreen() {
   return !window_md_JS_media_query.matches;
@@ -142,35 +241,16 @@ function initHomePage() {
 }
 
 function setupGeolocation() {
-  if (navigator.geolocation) {
-    requestGeolocationPermission();
-  } else {
-    $("#homeWrapper").append(createNoGeolocationElement());
+  if (isGeolocationSupported()) {
+    navigator.geolocation.getCurrentPosition(function(result) {
+      updateHomePageLocationDisplay(result.coords.latitude, result.coords.longitude);
+    });
   }
 }
 
-function requestGerequestGeolocationPermissionolocationPermission() {
-  navigator.geolocation.watchPosition(function(location) { 
-    clearHomeWrapper();
-    showPositionOnHomePage(location.coords);
-  },
-  function(error) {
-    var i = 5;
-  });
-
-  navigator.permissions.query({ name: "geolocation" }).then((result) => {
-    if (result.state === "granted") {
-      showToast("GPS permission granted.");
-    } else if (result.state == "prompt") {
-      showToast("GPS permission prompt.");
-      clearHomeWrapper();
-      $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
-    } else {
-      showToast("GPS permission denied.");
-      clearHomeWrapper();
-      $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
-    }
-  });
+function updateHomePageLocationDisplay(latitude, longitude) {
+  clearHomeWrapper();
+  $("#homeWrapper").append(createShowCurrentLocationElement(latitude, longitude));
 }
 
 function clearHomeWrapper() {
@@ -182,38 +262,38 @@ function showPositionOnHomePage(coordinates) {
 }
 
 function showPosition(position) {
- console.log(position);
+  console.log(position);
 }
 
 /////////////////////////////// Dynamic HTML element creation for home page position display
 
 function createNoGeolocationElement() {
   return $("<span></span>", {
-    "class" : "text-xl",
-    "text" : "This device does not support geolocation."
+    "class": "text-xl",
+    "text": "This device does not support geolocation."
   });
 }
 
 function createGeolocationPermissionDeniedElement() {
   return $("<span></span>", {
-    "class" : "text-xl",
-    "text" : "The permission for geolocation is missing."
+    "class": "text-xl",
+    "text": "The permission for geolocation is missing."
   });
 }
 
 function createShowCurrentLocationElement(latitude, longitude) {
   const textParagraphElement = $("<p></p>", {
-    "class" : "text-2xl",
-    "text" : "Current location:"
+    "class": "text-2xl",
+    "text": "Current location:"
   });
 
   const coordinatesParagraphElement = $("<p></p>", {
-    "class" : "text-xl",
-    "text" : "Latitude: " + latitude + " | Longitude: " + longitude
+    "class": "text-xl",
+    "text": "Latitude: " + latitude + " | Longitude: " + longitude
   });
 
-  const wrapperDiv =  $("<div></div>", {
-    "class" : "flex flex-col items-center"
+  const wrapperDiv = $("<div></div>", {
+    "class": "flex flex-col items-center"
   });
 
   return wrapperDiv
@@ -251,13 +331,13 @@ function _loadAllNotes(db) {
     .getAll();
 
   request.onsuccess = (event) => {
-    console.log("Notes loaded.");    
+    console.log("Notes loaded.");
 
     const notes = event.target.result;
 
     const notesList = $("#notesList");
 
-    for (var i = 0; i < notes.length; i++){
+    for (var i = 0; i < notes.length; i++) {
       const note = notes[i];
       notesList.append(createNoteListElement(note));
     }
@@ -285,21 +365,21 @@ function _deleteNote(db, noteId) {
     .objectStore(NOTES_OBJECT_STORE_NAME)
     .delete(noteId);
 
-    request.onsuccess = (event) => {
-      console.log("Note with id " + noteId + " deleted.");   
+  request.onsuccess = (event) => {
+    console.log("Note with id " + noteId + " deleted.");
 
-      db.close();
+    db.close();
 
-      showToast("Note deleted.");
+    showToast("Note deleted.");
 
-      loadAllNotes();
-    };
-  
-    request.onerror = (event) => {
-      console.log("Failed to delete note.");
-      db.close();
-      showToast("Failed to delete note.");
-    }
+    loadAllNotes();
+  };
+
+  request.onerror = (event) => {
+    console.log("Failed to delete note.");
+    db.close();
+    showToast("Failed to delete note.");
+  }
 }
 
 /////////////////////////////// Dynamic HTML element creation for note list entries
@@ -381,7 +461,7 @@ function createDeleteButton(noteToDelete) {
 
   const buttonElement = $("<button></button>", {
     "class": "bg-red-600 w-12 h-12 rounded-md shadow",
-    "click" : function() {
+    "click": function () {
       deleteNote(noteToDelete.id);
     }
   });
@@ -403,16 +483,16 @@ function createDeleteButton(noteToDelete) {
 var marker = null;
 var map = null;
 
-function initAddNotePage () {
-  
-    map = L.map('add_notes_map').setView([51.505, -0.09], 13);
+function initAddNotePage() {
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
+  map = L.map('add_notes_map').setView([51.505, -0.09], 13);
 
-    map.on('click', onMapClicked);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  map.on('click', onMapClicked);
 }
 
 function destroyAddNotePage() {
@@ -472,11 +552,11 @@ function addNote() {
   const content = $("#addNodeContentTextArea").val();
   const latitude = $("#addNoteLatitudeInput").val();
   const longitude = $("#addNoteLongitudeInput").val();
-  
+
   if (!validateNoteData(title, content, latitude, longitude)) {
     return;
   }
-  
+
   const id = crypto.randomUUID();
   const createdAt = DateTime.now().toSeconds();
 
@@ -575,6 +655,7 @@ const DATABASE_VERSION = 3;
 const NOTES_OBJECT_STORE_NAME = "Notes";
 const TRANACTION_TYPE_READ_WRITE = "readwrite";
 const TRANACTION_TYPE_READ_ONLY = "readonly";
+const GEOHASH_INDEX_NAME = "geohash_index";
 
 function useDatabase(onSuccess, onError) {
   const request = window.indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
@@ -599,7 +680,7 @@ function createObjectStores(event) {
   const objectStore = db.createObjectStore(NOTES_OBJECT_STORE_NAME, { keyPath: "id" });
 
   // Create index for geohashes
-  objectStore.createIndex("geohash_index", "geohash", { unique: false })
+  objectStore.createIndex(GEOHASH_INDEX_NAME, "geohash", { unique: false })
 
   console.log("ObjectStore " + NOTES_OBJECT_STORE_NAME + " created.");
 }

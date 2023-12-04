@@ -1,5 +1,9 @@
-// import { v4 as uuidv4 } from 'uuid';
 const { DateTime } = luxon;
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////// Layout
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY = "isSideBarOpen";
 const SIDEBAR_OPEN = "open";
@@ -10,15 +14,16 @@ const HOME_MAIN_CONTAINER_STATE = "home";
 const NOTES_MAIN_CONTAINER_STATE = "notes";
 const ADD_NOTE_MAIN_CONTAINER_STATE = "add_note";
 
-var window_md_JS_media_query = window.matchMedia("(min-width: 768px)");
 
-function isMediumOrBiggerScreen() {
-  return !window_md_JS_media_query.matches;
-}
+var window_md_JS_media_query = window.matchMedia("(min-width: 768px)");
 
 window.onload = function () {
   loadSideBarState();
   loadMainContainerState();
+}
+
+function isMediumOrBiggerScreen() {
+  return !window_md_JS_media_query.matches;
 }
 
 function loadMainContainerState() {
@@ -74,25 +79,8 @@ function closeSideBar() {
   window.localStorage.setItem(IS_SIDEBAR_OPEN_LOCAL_STORAGE_KEY, SIDEBAR_CLOSE);
 }
 
-function navToNotes() {
-  $("#mainContainer").load("notes.html", function () {
-    loadAllNotes();
-  });
-
-  $("#notesNavAnchor").addClass("bg-gray-200");
-  $("#homeNavAnchor").removeClass("bg-gray-200");
-
-  if (isMediumOrBiggerScreen()) {
-    closeSideBar();
-  }
-
-  window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, NOTES_MAIN_CONTAINER_STATE);
-}
-
 function navToHome() {
-  $("#mainContainer").load("home.html", function() {
-    setupGeolocation();
-  });
+  $("#mainContainer").load("home.html", initHomePage);
 
   $("#notesNavAnchor").removeClass("bg-gray-200");
   $("#homeNavAnchor").addClass("bg-gray-200");
@@ -104,14 +92,21 @@ function navToHome() {
   window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, HOME_MAIN_CONTAINER_STATE);
 }
 
+function navToNotes() {
+  $("#mainContainer").load("notes.html", initNotesPage);
+
+  $("#notesNavAnchor").addClass("bg-gray-200");
+  $("#homeNavAnchor").removeClass("bg-gray-200");
+
+  if (isMediumOrBiggerScreen()) {
+    closeSideBar();
+  }
+
+  window.localStorage.setItem(MAIN_CONTAINER_STATE_LOCAL_STORAGE_KEY, NOTES_MAIN_CONTAINER_STATE);
+}
+
 function navToAddNote() {
-  $("#mainContainer").load("add_note.html", function() {
-    var map = L.map('add_notes_map').setView([51.505, -0.09], 13);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-  });
+  $("#mainContainer").load("add_note.html", initAddNotePage);
 
   $("#notesNavAnchor").addClass("bg-gray-200");
   $("#remindersNavAnchor").removeClass("bg-gray-200");
@@ -120,88 +115,108 @@ function navToAddNote() {
 }
 
 
-class Note {
-  constructor(id, title, content, createdAt) {
-    this.id = id;
-    this.title = title;
-    this.content = content;
-    this.createdAt = createdAt;
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////// Home Page
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function initHomePage() {
+  setupGeolocation();
+}
+
+function setupGeolocation() {
+  if (navigator.geolocation) {
+    requestGeolocationPermission();
+  } else {
+    $("#homeWrapper").append(createNoGeolocationElement());
   }
 }
 
-function isStringNullOrEmpty(str) {
-  return str != null && str == "";
-}
+function requestGerequestGeolocationPermissionolocationPermission() {
+  navigator.geolocation.watchPosition(function(location) { 
+    clearHomeWrapper();
+    showPositionOnHomePage(location.coords);
+  },
+  function(error) {
+    var i = 5;
+  });
 
-function addNote() {
-  const id = crypto.randomUUID();
-  const title = $("#addNoteTitleInput").val();
-  const content = $("#addNodeContentTextArea").val();
-  const createdAt = DateTime.now().toSeconds();
-
-  if (isStringNullOrEmpty(title)) {
-    showToast("Title may not be empty.");
-    return;
-  }
-
-  if (isStringNullOrEmpty(content)) {
-    showToast("Content may not be empty.");
-    return;
-  }
-
-  // TODO: validate
-  const note = new Note(
-    id,
-    title,
-    content,
-    createdAt
-  );
-
-  useDatabase(
-    (event) => saveNote(event.target.result, note),
-    function onError(event) {
-      showToast("Failed to save note.");
+  navigator.permissions.query({ name: "geolocation" }).then((result) => {
+    if (result.state === "granted") {
+      showToast("GPS permission granted.");
+    } else if (result.state == "prompt") {
+      showToast("GPS permission prompt.");
+      clearHomeWrapper();
+      $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
+    } else {
+      showToast("GPS permission denied.");
+      clearHomeWrapper();
+      $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
     }
-  );
+  });
 }
 
-function showToast(content) {
-  Toastify({
-    text: content,
-    duration: 4000,
-    newWindow: false,
-    close: false,
-    gravity: "top",
-    position: "right",
-    stopOnFocus: false,
-  }).showToast();
+function clearHomeWrapper() {
+  $("#homeWrapper").empty();
 }
 
-function saveNote(db, note) {
-  const request = db
-    .transaction(NOTES_OBJECT_STORE_NAME, TRANACTION_TYPE_READ_WRITE)
-    .objectStore(NOTES_OBJECT_STORE_NAME)
-    .add(note);
+function showPositionOnHomePage(coordinates) {
+  $("#homeWrapper").append(createShowCurrentLocationElement(coordinates.latitude, coordinates.longitude));
+}
 
-  request.onsuccess = (event) => {
-    console.log("Note created.");
-    db.close();
+function showPosition(position) {
+ console.log(position);
+}
 
-    showToast("Note created.");
+/////////////////////////////// Dynamic HTML element creation for home page position display
 
-    navToNotes();
-  };
+function createNoGeolocationElement() {
+  return $("<span></span>", {
+    "class" : "text-xl",
+    "text" : "This device does not support geolocation."
+  });
+}
 
-  request.onerror = (event) => {
-    console.log("Note saving failed.");
-    db.close();
-    alert("Failed to save note.");
-  };
+function createGeolocationPermissionDeniedElement() {
+  return $("<span></span>", {
+    "class" : "text-xl",
+    "text" : "The permission for geolocation is missing."
+  });
+}
+
+function createShowCurrentLocationElement(latitude, longitude) {
+  const textParagraphElement = $("<p></p>", {
+    "class" : "text-2xl",
+    "text" : "Current location:"
+  });
+
+  const coordinatesParagraphElement = $("<p></p>", {
+    "class" : "text-xl",
+    "text" : "Latitude: " + latitude + " | Longitude: " + longitude
+  });
+
+  const wrapperDiv =  $("<div></div>", {
+    "class" : "flex flex-col items-center"
+  });
+
+  return wrapperDiv
+    .append(textParagraphElement)
+    .append(coordinatesParagraphElement);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////// Notes Page
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+function initNotesPage() {
+  loadAllNotes();
 }
 
 function clearNotes() {
   $("#notesList").empty();
 }
+
+/////////////////////////////// Note database functions for loading and deleting
 
 function loadAllNotes() {
   clearNotes();
@@ -269,40 +284,7 @@ function _deleteNote(db, noteId) {
     }
 }
 
-/////////////////////////////////////////////////////// Database utility
-const DATABASE_NAME = "GeoNotesDatabase";
-const DATABASE_VERSION = 3;
-const NOTES_OBJECT_STORE_NAME = "Notes";
-const TRANACTION_TYPE_READ_WRITE = "readwrite";
-const TRANACTION_TYPE_READ_ONLY = "readonly";
-
-function useDatabase(onSuccess, onError) {
-  const request = window.indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-
-  request.onerror = (event) => {
-    console.log("Failed to open database " + DATABASE_NAME + ".");
-    onError(event);
-  };
-
-  request.onsuccess = (event) => {
-    console.log("Database " + DATABASE_NAME + "opened.");
-    onSuccess(event);
-  };
-
-  request.onupgradeneeded = createObjectStores;
-}
-
-function createObjectStores(event) {
-  const db = event.target.result;
-
-  // Create an objectStore for this database
-  const objectStore = db.createObjectStore(NOTES_OBJECT_STORE_NAME, { keyPath: "id" });
-  console.log("ObjectStore " + NOTES_OBJECT_STORE_NAME + " created.");
-}
-///////////////////////////////////////////////////////////////////////////////// Timestamp utility
-
-
-/////////////////////////////////////////////////////////////////////////////// Creation of note html
+/////////////////////////////// Dynamic HTML element creation for note list entries
 
 function createNoteListElement(note) {
   const noteIcon = createNoteIcon(note.title.charAt(0));
@@ -396,83 +378,219 @@ function createDeleteButton(noteToDelete) {
 }
 
 
-function setupGeolocation() {
-  if (navigator.geolocation) {
-    requestGeolocationPermission();
-  } else {
-    $("#homeWrapper").append(createNoGeolocationElement());
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////// Add Note Page
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var marker = null;
+var map = null;
+
+function initAddNotePage () {
+  
+    map = L.map('add_notes_map').setView([51.505, -0.09], 13);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    map.on('click', onMapClicked);
+}
+
+/////////////////////////////// Map Handling
+
+function onMapClicked(e) {
+  applyLocation(e.latlng.lat, e.latlng.lng);
+}
+
+function setCurrentLocation() {
+  navigator.geolocation.getCurrentPosition(onGetCurrentPositionSuccess, onGetCurrentPositionError);
+}
+
+function onGetCurrentPositionSuccess(position) {
+  applyLocation(position.coords.latitude, position.coords.longitude);
+
+  if (map != null) {
+    map.flyTo(L.latLng(position.coords.latitude, position.coords.longitude));
   }
 }
 
-function requestGeolocationPermission() {
-  navigator.geolocation.watchPosition(function(location) { 
-    clearHomeWrapper();
-    showPositionOnHomePage(location.coords);
-  },
-  function(error) {
-    var i = 5;
-  });
+function onGetCurrentPositionError(error) {
+  showToast("Failed to get current location.");
+}
 
-  navigator.permissions.query({ name: "geolocation" }).then((result) => {
-    if (result.state === "granted") {
-      showToast("GPS permission granted.");
-    } else if (result.state == "prompt") {
-      showToast("GPS permission prompt.");
-      clearHomeWrapper();
-      $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
-    } else {
-      showToast("GPS permission denied.");
-      clearHomeWrapper();
-      $("#homeWrapper").append(createGeolocationPermissionDeniedElement());
+function applyLocation(latitude, longitude) {
+  placeMarker(latitude, longitude);
+
+  $("#addNoteLatitudeInput").val(e.latlng.lat);
+  $("#addNoteLongitudeInput").val(e.latlng.lng);
+}
+
+function placeMarker(lat, lng) {
+  if (map == null) {
+    return;
+  }
+
+  if (marker != null) {
+    map.removeLayer(marker);
+  }
+
+  marker = L.marker([lat, lng]).addTo(map);
+}
+
+/////////////////////////////// Creation and storing of notes
+
+function addNote() {
+  const title = $("#addNoteTitleInput").val();
+  const content = $("#addNodeContentTextArea").val();
+  const latitude = $("#addNoteLatitudeInput").val();
+  const longitude = $("#addNoteLongitudeInput").val();
+  
+  if (!validateNoteData(title, content, latitude, longitude)) {
+    return;
+  }
+  
+  const id = crypto.randomUUID();
+  const createdAt = DateTime.now().toSeconds();
+
+  const note = new Note(
+    id,
+    title,
+    content,
+    latitude,
+    longitude,
+    encode(latitude, longitude, 7),
+    createdAt
+  );
+
+  useDatabase(
+    (event) => _addNote(event.target.result, note),
+    function onError(event) {
+      showToast("Failed to save note.");
     }
-    // result.addEventListener("change", () => {
-    //   report(result.state);
-    // });
-  });
+  );
 }
 
-function clearHomeWrapper() {
-  $("#homeWrapper").empty();
+function validateNoteData(title, content, latitude, longitude) {
+  if (isStringNullOrEmpty(title)) {
+    showToast("Title may not be empty.");
+    return false;
+  }
+
+  if (isStringNullOrEmpty(content)) {
+    showToast("Content may not be empty.");
+    return false;
+  }
+
+  if (isStringNullOrEmpty(latitude)) {
+    showToast("Latitude may not be empty.");
+    return false;
+  }
+
+  if (isStringNullOrEmpty(longitude)) {
+    showToast("Longitude may not be empty.");
+    return false;
+  }
+
+  return true;
 }
 
-function createNoGeolocationElement() {
-  return $("<span></span>", {
-    "class" : "text-xl",
-    "text" : "This device does not support geolocation."
-  });
+function isStringNullOrEmpty(str) {
+  return str != null && str == "";
 }
 
-function createGeolocationPermissionDeniedElement() {
-  return $("<span></span>", {
-    "class" : "text-xl",
-    "text" : "The permission for geolocation is missing."
-  });
+function _addNote(db, note) {
+  const request = db
+    .transaction(NOTES_OBJECT_STORE_NAME, TRANACTION_TYPE_READ_WRITE)
+    .objectStore(NOTES_OBJECT_STORE_NAME)
+    .add(note);
+
+  request.onsuccess = (event) => {
+    console.log("Note created.");
+    db.close();
+
+    showToast("Note created.");
+
+    navToNotes();
+  };
+
+  request.onerror = (event) => {
+    console.log("Note saving failed.");
+    db.close();
+    alert("Failed to save note.");
+  };
 }
 
-function createShowCurrentLocationElement(latitude, longitude) {
-  const textParagraphElement = $("<p></p>", {
-    "class" : "text-2xl",
-    "text" : "Current location:"
-  });
 
-  const coordinatesParagraphElement = $("<p></p>", {
-    "class" : "text-xl",
-    "text" : "Latitude: " + latitude + " | Longitude: " + longitude
-  });
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////// Toasts
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  const wrapperDiv =  $("<div></div>", {
-    "class" : "flex flex-col items-center"
-  });
-
-  return wrapperDiv
-    .append(textParagraphElement)
-    .append(coordinatesParagraphElement);
+function showToast(content) {
+  Toastify({
+    text: content,
+    duration: 4000,
+    newWindow: false,
+    close: false,
+    gravity: "top",
+    position: "right",
+    stopOnFocus: false,
+  }).showToast();
 }
 
-function showPositionOnHomePage(coordinates) {
-  $("#homeWrapper").append(createShowCurrentLocationElement(coordinates.latitude, coordinates.longitude));
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////// Database Utility
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const DATABASE_NAME = "GeoNotesDatabase";
+const DATABASE_VERSION = 3;
+const NOTES_OBJECT_STORE_NAME = "Notes";
+const TRANACTION_TYPE_READ_WRITE = "readwrite";
+const TRANACTION_TYPE_READ_ONLY = "readonly";
+
+function useDatabase(onSuccess, onError) {
+  const request = window.indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+
+  request.onerror = (event) => {
+    console.log("Failed to open database " + DATABASE_NAME + ".");
+    onError(event);
+  };
+
+  request.onsuccess = (event) => {
+    console.log("Database " + DATABASE_NAME + "opened.");
+    onSuccess(event);
+  };
+
+  request.onupgradeneeded = createObjectStores;
 }
 
-function showPosition(position) {
- console.log(position);
+function createObjectStores(event) {
+  const db = event.target.result;
+
+  // Create an objectStore for this database
+  const objectStore = db.createObjectStore(NOTES_OBJECT_STORE_NAME, { keyPath: "id" });
+
+  // Create index for geohashes
+  objectStore.createIndex("geohash_index", "geohash", { unique: false })
+
+  console.log("ObjectStore " + NOTES_OBJECT_STORE_NAME + " created.");
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////// Note Data
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+class Note {
+  constructor(id, title, content, latitude, longitude, geohash, createdAt) {
+    this.id = id;
+    this.title = title;
+    this.content = content;
+    this.latitude = latitude;
+    this.longitude = longitude;
+    this.geohash = geohash;
+    this.createdAt = createdAt;
+  }
 }

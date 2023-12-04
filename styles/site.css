@@ -6,3 +6,20 @@
     background: linear-gradient(#d6dbdc, #ffffff);
 }
 
+.notes_map {
+    height: 300px;
+}
+
+/* sm */
+@media only screen and (min-width: 640px){
+    .notes_map {
+        height: 400px;
+    }
+}
+
+/* tailwind xl */
+@media only screen and (min-width: 1280px) {
+    .notes_map {
+        height: 500px;
+    }
+}

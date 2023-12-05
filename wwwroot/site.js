@@ -213,6 +213,8 @@ function onNewGeolocation(latitude, longitude) {
   updateHomePageWithNewLocation(latitude, longitude);
 }
 
+/////////////////////////////// Global Notification Handling
+
 function updateNoteNotification(latitude, longitude) {
   useDatabase(function(event) {
 
@@ -228,8 +230,6 @@ function updateNoteNotification(latitude, longitude) {
         const notes = event.target.result;
 
         updateNotification(notes);
-
-        //console.log(notes.length +  " active notes found.");
       };
   },
   function(error) {
@@ -237,14 +237,6 @@ function updateNoteNotification(latitude, longitude) {
   });
 }
 
-
-function removeItemOnce(arr, value) {
-  var index = arr.indexOf(value);
-  if (index > -1) {
-    arr.splice(index, 1);
-  }
-  return arr;
-}
 
 function sequenceEquals(a, b) {
   if (a === b) return true;
@@ -272,7 +264,7 @@ function updateNotification(notes) {
   if (!sequenceEquals(currentlyActiveNoteIds, newlyActiveNoteIds)) {
     currentlyActiveNoteIds = newlyActiveNoteIds;
 
-    showNotification(notes);
+    showNotesNotification(notes);
     console.log(newlyActiveNoteIds);
   }
 }
@@ -283,7 +275,6 @@ function requestNotificationPermission() {
   }
 
   Notification.requestPermission().then((permission) => {
-    // If the user accepts, let's create a notification
     if (permission === "granted") {
       showToast("Notification Permission granted.");
     } else {
@@ -292,7 +283,7 @@ function requestNotificationPermission() {
   });
 }
 
-function showNotification(notes) {
+function showNotesNotification(notes) {
   let body = null;
 
   if (notes.length == 1) {
@@ -302,7 +293,7 @@ function showNotification(notes) {
   }
 
   if (Notification.permission === "granted") {
-    const notification = new Notification("GeoNotes",  { body });
+    new Notification("GeoNotes",  { body });
   } else if (Notification.permission !== "denied") {
     showToast(body);
   }

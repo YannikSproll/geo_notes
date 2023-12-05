@@ -18,6 +18,8 @@ window.onload = function () {
   loadSideBarState();
   loadMainContainerState();
   setUpLocationListener();
+
+  requestNotificationPermission();
 }
 
 /////////////////////////////// Javascript media queries
@@ -224,12 +226,86 @@ function updateNoteNotification(latitude, longitude) {
 
       request.onsuccess = (event) => {
         const notes = event.target.result;
-        console.log(notes.length +  " active notes found.");
+
+        updateNotification(notes);
+
+        //console.log(notes.length +  " active notes found.");
       };
   },
   function(error) {
     console.log("Failed to fetch notes from database.");
   });
+}
+
+
+function removeItemOnce(arr, value) {
+  var index = arr.indexOf(value);
+  if (index > -1) {
+    arr.splice(index, 1);
+  }
+  return arr;
+}
+
+function sequenceEquals(a, b) {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.length !== b.length) return false;
+
+  a.sort();
+  b.sort();
+
+  for (var i = 0; i < a.length; ++i) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+let currentlyActiveNoteIds = new Array();
+
+function updateNotification(notes) {
+  var newlyActiveNoteIds = new Array(notes.length);
+
+    for (var i = 0; i < notes.length; i++) {
+      newlyActiveNoteIds[i] = notes[i].id;
+    }
+
+  if (!sequenceEquals(currentlyActiveNoteIds, newlyActiveNoteIds)) {
+    currentlyActiveNoteIds = newlyActiveNoteIds;
+
+    showNotification(notes);
+    console.log(newlyActiveNoteIds);
+  }
+}
+
+function requestNotificationPermission() {
+  if (!("Notification" in window)) {
+    return; // Broser doesnt support permissions
+  }
+
+  Notification.requestPermission().then((permission) => {
+    // If the user accepts, let's create a notification
+    if (permission === "granted") {
+      showToast("Notification Permission granted.");
+    } else {
+      showToast("Notification Permission denied.");
+    }
+  });
+}
+
+function showNotification(notes) {
+  let body = null;
+
+  if (notes.length == 1) {
+    body = notes.length + " note is active.";
+  } else {
+    body = notes.length + " notes are active.";
+  }
+
+  if (Notification.permission === "granted") {
+    const notification = new Notification("GeoNotes",  { body });
+  } else if (Notification.permission !== "denied") {
+    showToast(body);
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

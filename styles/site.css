@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom Css (in addition to tailwind css) */
+
 .main-background {
     background: linear-gradient(#d6dbdc, #ffffff);
 }
